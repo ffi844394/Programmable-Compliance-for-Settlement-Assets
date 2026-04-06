@@ -4,14 +4,13 @@ To-do
 ## Table of Contents
 1. [Introduction](#introduction)
 2. [Core Standards](#core-standards)
-3. [Transaction Envelope](#transaction-envelope)
-4. [Compliance Attestation](#compliance-attestation)
-5. [Architecture Overview](#architecture-overview)
-6. [Illustrative Actions](#illustrative-actions)
+3. [Architecture Overview](#architecture-overview)
+4. [Illustrative Actions](#illustrative-actions)
 
 ## Introduction
-This repository provides a sample implementation of the Global Layer One (GL1) Programmable Compliance (PC) Toolkit, demonstrating how regulated digital assets can be transferred under policy-enforced, auditable, and extensible compliance controls.
-The implementation illustrates a practical architecture aligned with the key features of the [PC Toolkit Reference Model](https://doc.global-layer-one.org/docs/programmable-compliance/reference-model/overview), where: 
+This repository provides a sample implementation of programmable compliance for settlement assets, demonstrating how regulated digital assets can be transferred under policy-enforced, auditable, and extensible compliance controls.
+
+The implementation adopts a modular architecture that separates asset logic from compliance enforcement, enabling flexible and composable policy application across different token types and transaction contexts. Where relevant, the design is informed by concepts from the GL1 Programmable Compliance Toolkit Reference Model, but is adapted to reflect the specific requirements of settlement asset use cases. The key features implemented are:
 
 - **Administrative Control** handles the underlying asset’s global administrative functions;
 - **Policy Wrapper** routes all asset transfers through a policy-enforced execution corridor;
@@ -24,42 +23,6 @@ For further details on how these key features are implemented in this POC, pleas
 The design also intends to mirror real-world financial market structures, where issuers, custodians (VASPs), compliance functions, and identity providers operate as distinct roles, rather than a single monolithic authority.
 
 This repository is intended as a **reference and educational example**, not a complete production system.
-
-## Core Standards
-Core Standards define the shared design rules that govern how transaction intent is represented for compliance evaluation and how compliance outcomes are bound to execution.
-
-In this proof-of-concept, these standards are implemented independently of any specific asset, policy, or identity scheme. They provide a consistent contract between execution components (e.g. Policy Wrappers) and compliance components (e.g. Policy Manager, Identity Registry), enabling interoperability, auditability, and predictable behaviour across different implementations.
-
-The two core standards illustrated are:
-- **Transaction Envelope** — how transaction intent and compliance-relevant context are represented; and
-- **Compliance Attestation** — how compliance outcomes are aggregated and enforced during execution.
-
-### Transaction Envelope
-A Transaction Envelope is the structured representation of a transfer request suitable for compliance evaluation before any asset movement occurs. In this proof-of-concept, when a user initiates a transfer via the `PolicyWrapper`:
-1. The `PolicyManager` builds the Transaction Envelope using transaction context data submitted by the `PolicyWrapper` to include:
-    - originator (`from`)
-    - beneficiary (`to`)
-    - token identifier (`token`)
-    - amount (`amount`)
-    - transaction timestamp (`timestamp`)
-    - additional asset/transaction context
-2. The `PolicyManager` constructs an enriched transaction envelope by incorporating party packet information derived from the Identity Manager (`IdentityRegistry`). Examples of party packet attributes include the presence of valid identity/KYC attestations for the originator and beneficiary. When using such a pattern, no Personally Identifiable Information (PII) is disclosed; only hashed attestations or derived compliance signals are used.
-3. The `PolicyManager` then submits the enriched transaction envelope to each registered policy for evaluation.
-If a policy outcome requires deferral, the wrapper materialises a minimal on-chain record (e.g. `PolicyWrapper.TxData`) to represent the pending transaction intent for later resolution and execution.
-
-
-### Compliance Attestation
-A Compliance Attestation is the aggregated outcome of compliance evaluation for a specific Transaction Envelope. In this POC: 
-- Each compliance policy (`KYCPolicy`[^1] and `VolumeThresholdPolicy`[^2]) evaluates the Transaction Envelope and returns an outcome (`Pass`, `Fail`, or `Pending`);
-- The `PolicyManager` aggregates these outcomes into a single effective compliance decision; and
-- The `PolicyWrapper` enforces this decision by executing immediately (`Pass`), reverting (`Fail`), or recording a pending envelope for later resolution (`Pending`).
-
-Compliance attestations are conceptually bound to the transaction envelope under evaluation, ensuring that a compliance decision applies only to a specific, immutable transfer intent and cannot be reused for a different transaction. 
-
-Here, this binding is observed in practice through deferred execution: a `Pending` decision applies to a specific stored `TxData` record, which can only be executed after approval and only for that recorded transaction.
-
-[^1]: `KYCPolicy`: Verifies that required parties have valid identity attestations in the `IdentityRegistry`.
-[^2]: `VolumeThresholdPolicy`: Enforces transaction size thresholds, with support for deferred approval.
 
 ## Architecture Overview
 These key components work together to embed regulatory compliance directly into digital asset transaction flows in an auditable, adaptable, and interoperable manner. 
