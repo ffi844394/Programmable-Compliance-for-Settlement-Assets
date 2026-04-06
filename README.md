@@ -1,5 +1,5 @@
 # Programmable Compliance
-Sample implementation of the Global Layer One Programmable Compliance Toolkit...
+To-do
 
 ## Table of Contents
 1. [Introduction](#introduction)
